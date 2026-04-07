@@ -122,7 +122,10 @@ with tab_overview:
     col1, col2 = st.columns(2)
     with col1:
         total_row = next((c for c in D["completionsNational"] if c["awardLevel"] == "Total"), None)
-        vals = total_row["values"] if total_row else []
+        if total_row:
+            vals = total_row["values"]
+        else:
+            vals = [sum(c["values"][i] for c in D["completionsNational"]) for i in range(len(D["completionsYears"]))]
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=D["completionsYears"], y=vals, mode="lines+markers", fill="tozeroy",
             line=dict(color=BLUE, width=2), fillcolor=f"rgba(74,104,176,0.12)"))
