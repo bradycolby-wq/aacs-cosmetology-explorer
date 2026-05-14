@@ -85,8 +85,8 @@ def base_layout(title="", yaxis_title="", y_tickprefix="", y_ticksuffix=""):
     )
 
 # --- TABS ---
-tab_overview, tab_comp, tab_emp, tab_fin, tab_inst, tab_prog = st.tabs(
-    ["Overview", "Completions", "Employment", "Finances", "Institutional Outcomes", "Program Outcomes"]
+tab_overview, tab_comp, tab_emp, tab_fin, tab_inst, tab_prog, tab_demo = st.tabs(
+    ["Overview", "Completions", "Employment", "Finances", "Institutional Outcomes", "Program Outcomes", "Student Demographics"]
 )
 
 # ===========================
@@ -498,4 +498,62 @@ with tab_prog:
 <p><b>Source:</b> U.S. Department of Education College Scorecard, program-level data.</p>
 <p><b>CIP codes included:</b> CIP 12.04 (Cosmetology and Related Personal Grooming Services) only. Note: The College Scorecard program-level outcomes data uses the 2-digit CIP prefix 12.04, which covers cosmetology, barbering, esthetics, nail technology, and related grooming programs. It does <b>not</b> include massage therapy or somatic bodywork programs (CIP 51.35xx), as those fall under a separate classification.</p>
 <p>Earnings represent median earnings of Title IV financial aid recipients at 1, 2, 3, and 4 years after completion. Weighted averages in the chart use award counts as weights. "Cosmetology Schools" are institutions flagged as cosmetology-designated in IPEDS; "Other Institutions" are primarily community colleges and vocational schools offering cosmetology programs.</p>
+</div>""", unsafe_allow_html=True)
+
+# ===========================
+# STUDENT DEMOGRAPHICS
+# ===========================
+with tab_demo:
+    fg = D.get("firstGen", {})
+    cosm = fg.get("cosmetology", {}) or {}
+    bench = fg.get("titleIVBenchmark", {}) or {}
+    cosm_val = cosm.get("value")
+    bench_val = bench.get("value")
+
+    st.markdown(f"<h3 style='color:{NAVY};margin:8px 0 4px;'>First-Generation Students</h3>", unsafe_allow_html=True)
+    st.markdown(
+        f"<p style='color:#5b5b5b;margin:0 0 16px;font-size:0.9rem;'>"
+        f"Share of students at cosmetology schools who are the first in their family to attend college, "
+        f"compared to all other Title IV institutions nationally.</p>",
+        unsafe_allow_html=True,
+    )
+
+    if cosm_val is None or bench_val is None:
+        st.warning("First-generation data not available in data.json. Run enrich_firstgen.py to populate.")
+    else:
+        delta_pp = (cosm_val - bench_val) * 100
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Cosmetology Schools", f"{cosm_val*100:.1f}%")
+        m2.metric("All Other Title IV Institutions", f"{bench_val*100:.1f}%")
+        m3.metric("Difference", f"{delta_pp:+.1f} pp")
+
+        fig = go.Figure(go.Bar(
+            y=["Cosmetology Schools", "All Other Title IV Institutions"],
+            x=[cosm_val * 100, bench_val * 100],
+            orientation="h",
+            marker_color=[GOLD, BLUE],
+            text=[f"{cosm_val*100:.1f}%", f"{bench_val*100:.1f}%"],
+            textposition="outside",
+        ))
+        fig.update_layout(**base_layout("% First-Generation Students (Enrollment-Weighted)"))
+        fig.update_xaxes(ticksuffix="%", range=[0, max(cosm_val, bench_val) * 100 * 1.2])
+        fig.update_yaxes(autorange="reversed")
+        st.plotly_chart(fig, use_container_width=True)
+
+        summary = (
+            f"Cosmetology schools enroll first-generation students at "
+            f"<b>{cosm_val*100:.1f}%</b> &mdash; <b>{delta_pp:+.1f} percentage points</b> "
+            f"{'above' if delta_pp >= 0 else 'below'} the national average of "
+            f"<b>{bench_val*100:.1f}%</b> across all other Title IV institutions."
+        )
+        st.markdown(
+            f"<div style='background:{LIGHT};padding:14px 18px;border-radius:8px;"
+            f"border-left:4px solid {GOLD};margin-top:12px;font-size:0.95rem;'>{summary}</div>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown(f"""<div class="footnote">
+<p><b>Source:</b> {fg.get("source", "U.S. Department of Education College Scorecard.")} Data year: {fg.get("year", "most-recent cohort")}.</p>
+<p><b>First-generation definition:</b> {fg.get("definition", "Share of students whose parents' highest educational attainment is a high school diploma or less.")}</p>
+<p><b>Methodology:</b> {fg.get("method", "Enrollment-weighted mean across institutions.")} Cosmetology figure based on N={cosm.get("n", 0):,} institutions (total undergraduate enrollment {cosm.get("enrollmentTotal", 0):,}). Title IV benchmark based on N={bench.get("n", 0):,} institutions (total undergraduate enrollment {bench.get("enrollmentTotal", 0):,}). The benchmark excludes the cosmetology-designated institutions in the cosmetology figure.</p>
 </div>""", unsafe_allow_html=True)
