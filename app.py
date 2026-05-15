@@ -1,9 +1,17 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-import json, os
+import json, os, base64
 
 st.set_page_config(page_title="AACS Cosmetology Industry Data Explorer", layout="wide", page_icon=":scissors:")
+
+@st.cache_data
+def _logo_data_uri():
+    path = os.path.join(os.path.dirname(__file__), "assets", "aacs-logo.png")
+    with open(path, "rb") as f:
+        return "data:image/png;base64," + base64.b64encode(f.read()).decode("ascii")
+
+LOGO_URI = _logo_data_uri()
 
 # --- AACS Colors ---
 NAVY = "#18223a"
@@ -48,14 +56,7 @@ st.markdown(f"""
 # --- Header ---
 st.markdown(f"""
 <div style="background:linear-gradient(135deg,{NAVY},#2a3a5c);color:white;padding:20px 32px;border-radius:8px;margin-bottom:16px;display:flex;align-items:center;gap:24px;">
-<svg width="200" height="52" viewBox="0 0 400 104" xmlns="http://www.w3.org/2000/svg">
-<text x="0" y="82" font-family="Georgia,serif" font-size="96" font-weight="400" fill="#6B8CCE" letter-spacing="-2">AACS</text>
-<line x1="262" y1="12" x2="262" y2="92" stroke="{GOLD}" stroke-width="2"/>
-<text x="274" y="32" font-family="Georgia,serif" font-size="20" font-weight="700" fill="{GOLD}" letter-spacing="2">AMERICAN</text>
-<text x="274" y="52" font-family="Georgia,serif" font-size="20" font-weight="700" fill="{GOLD}" letter-spacing="2">ASSOCIATION</text>
-<text x="274" y="72" font-family="Georgia,serif" font-size="20" font-weight="700" fill="{GOLD}" letter-spacing="2">OF CAREER</text>
-<text x="274" y="92" font-family="Georgia,serif" font-size="20" font-weight="700" fill="{GOLD}" letter-spacing="2">SCHOOLS</text>
-</svg>
+<img src="{LOGO_URI}" alt="AACS — American Association of Career Schools" style="height:64px;width:auto;display:block;flex-shrink:0;" />
 <div>
 <h2 style="margin:0;font-size:1.5rem;">Cosmetology Industry Data Explorer</h2>
 <p style="margin:4px 0 0;opacity:0.85;font-size:0.85rem;">Barber, Beauty, and Wellness Schools: Setting the Record Straight</p>
